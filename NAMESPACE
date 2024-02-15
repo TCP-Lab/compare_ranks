@@ -3,4 +3,6 @@
 export(compare_two_way_ranks)
 export(continuous_congruency)
 export(plot_continuous_congruency)
+export(score_comparisons)
+export(test_comparisons)
 export(window_compare_rank)
