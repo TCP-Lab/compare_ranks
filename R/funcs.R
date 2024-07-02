@@ -168,7 +168,7 @@ compare_two_way_ranks <- function(ranks) {
     first_label <- pairs[i, 1]
     second_label <- pairs[i, 2]
     new_name <- paste0(first_label, "_vs_", second_label)
-
+    print(paste0("Comparing ", new_name))
     values <- continuous_congruency(ranks[[first_label]], ranks[[second_label]])
 
     results$steps <- values$steps
