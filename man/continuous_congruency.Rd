@@ -4,12 +4,21 @@
 \alias{continuous_congruency}
 \title{Compute the continuous congruency of two vectors}
 \usage{
-continuous_congruency(one, two)
+continuous_congruency(one, two, size_step = 1, workers = 1, progress = TRUE)
 }
 \arguments{
 \item{one}{The first vector to compare}
 
 \item{two}{The second vector to compare}
+
+\item{size_step}{The congruency window size will be increased by this amount
+every iteration. Larger steps reduce computation burden, but
+decrease the resolution of the result. Default 1}
+
+\item{workers}{Integer value representing how many threads to spawn to parallelize
+the calculations. Defaults to 1.}
+
+\item{progress}{Show a progress bar? Default to \code{TRUE}, showing a progress bar.}
 }
 \value{
 A data.frame with the following columns:
@@ -20,7 +29,7 @@ A data.frame with the following columns:
 \description{
 This function calls \code{window_compare_rank} over and over with progressively
 larger windows, from \code{1} to \code{length(one)} (the two vectors must be of the
-same length), and returns a list of all of these values.
+same length) with a step of \code{size_step}, and returns a list of all of these values.
 }
 \details{
 One \code{window_compare_rank} is not especially interesting, but the distribution

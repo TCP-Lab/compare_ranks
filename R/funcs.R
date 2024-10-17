@@ -65,13 +65,19 @@ window_compare_rank <- function(one, two, binsize = 1) {
 #'
 #' This function calls `window_compare_rank` over and over with progressively
 #' larger windows, from `1` to `length(one)` (the two vectors must be of the
-#' same length), and returns a list of all of these values.
+#' same length) with a step of `size_step`, and returns a list of all of these values.
 #'
 #' One `window_compare_rank` is not especially interesting, but the distribution
 #' of these values as the window increases is.
 #'
 #' @param one The first vector to compare
 #' @param two The second vector to compare
+#' @param size_step The congruency window size will be increased by this amount
+#'   every iteration. Larger steps reduce computation burden, but
+#'   decrease the resolution of the result. Default 1
+#' @param progress Show a progress bar? Default to `TRUE`, showing a progress bar.
+#' @param workers Integer value representing how many threads to spawn to parallelize
+#'                the calculations. Defaults to 1.
 #'
 #' @returns A data.frame with the following columns:
 #'          - `steps`: the window size of the calculated rank;
@@ -83,13 +89,19 @@ window_compare_rank <- function(one, two, binsize = 1) {
 #'
 #' @author Hedmad
 #' @export
-continuous_congruency <- function(one, two) {
-  steps = seq(from = 1, to = length(one), by = 1)
-
+continuous_congruency <- function(one, two, size_step = 1, workers = 1, progress = TRUE) {
+  steps = seq(from = 1, to = length(one), by = size_step)
+  
+  future::plan(future::multisession, workers = workers)
+      
   data.frame(
     steps = steps,
     step_fraction = steps / length(one),
-    value = purrr::map_vec(steps, \(x) {window_compare_rank(one, two, binsize = x)})
+    value = furrr::future_map(
+        steps,
+        \(x) {window_compare_rank(one, two, binsize = x)},
+        .progress = progress
+    ) |> unlist()
   )
 }
 
@@ -130,7 +142,7 @@ plot_continuous_congruency <- function(comparisons, legend_scale = 10) {
       legend.text=ggplot2::element_text(size=width_scale),
       legend.box.margin =  ggplot2::margin(6, 6, 6, 6),
       legend.title=ggplot2::element_text(size=1.5*width_scale,face="bold"),
-      legend.position="bottom",
+      legend.position="right",
       legend.key.size = grid::unit(width_scale/50, "inch"),
       legend.key.width = grid::unit(width_scale/50, "inch")
     )
@@ -144,6 +156,7 @@ plot_continuous_congruency <- function(comparisons, legend_scale = 10) {
 #' used in the output, with the pattern `one_vs_two`.
 #'
 #' @param ranks A named list with a vector in each slot, with a specific order.
+#' @param ... Further arguments to be passed to `continuous_congruency`.
 #'
 #' @returns A data.frame with the following columns:
 #'          - `steps`: the window size of the calculated rank;
@@ -154,7 +167,7 @@ plot_continuous_congruency <- function(comparisons, legend_scale = 10) {
 #'
 #' @author Hedmad
 #' @export
-compare_two_way_ranks <- function(ranks) {
+compare_two_way_ranks <- function(ranks, ...) {
   items <- names(ranks)
   pairs <- t(utils::combn(items, 2))
 
@@ -169,7 +182,7 @@ compare_two_way_ranks <- function(ranks) {
     second_label <- pairs[i, 2]
     new_name <- paste0(first_label, "_vs_", second_label)
     print(paste0("Comparing ", new_name))
-    values <- continuous_congruency(ranks[[first_label]], ranks[[second_label]])
+    values <- continuous_congruency(ranks[[first_label]], ranks[[second_label]], ...)
 
     results$steps <- values$steps
     results$step_fraction <- values$step_fraction
@@ -222,15 +235,16 @@ score_comparisons <- function(comparisons) {
 #' @param a A vector to compare.
 #' @param b Another vector to compare with.
 #' @param perms The number of permutations to compute. Defaults to 1000.
+#' @param ... Further arguments to be passed to `continuous_congruency`.
 #'
 #' @returns A p-value between 0 and 1.
 #'
 #' @author Hedmad
 #' @export
-test_comparisons <- function(a, b, perms = 1000) {
+test_comparisons <- function(a, b, perms = 1000, ...) {
   shuffle <- function(x) {sample(x, length(x))}
 
-  original <- unlist(score_comparisons(continuous_congruency(a, b)))
+  original <- unlist(score_comparisons(continuous_congruency(a, b, ...)))
   permutations <- c()
   pb <- progress::progress_bar$new(total = perms)
   for (i in seq_len(perms)) {

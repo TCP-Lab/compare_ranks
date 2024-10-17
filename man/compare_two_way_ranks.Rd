@@ -4,10 +4,12 @@
 \alias{compare_two_way_ranks}
 \title{Compare all ranks in a list taken two at a time}
 \usage{
-compare_two_way_ranks(ranks)
+compare_two_way_ranks(ranks, ...)
 }
 \arguments{
 \item{ranks}{A named list with a vector in each slot, with a specific order.}
+
+\item{...}{Further arguments to be passed to \code{continuous_congruency}.}
 }
 \value{
 A data.frame with the following columns:

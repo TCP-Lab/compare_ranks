@@ -4,7 +4,7 @@
 \alias{test_comparisons}
 \title{Compute a p-value of the difference in ordering between two vectors a and b}
 \usage{
-test_comparisons(a, b, perms = 1000)
+test_comparisons(a, b, perms = 1000, ...)
 }
 \arguments{
 \item{a}{A vector to compare.}
@@ -12,6 +12,8 @@ test_comparisons(a, b, perms = 1000)
 \item{b}{Another vector to compare with.}
 
 \item{perms}{The number of permutations to compute. Defaults to 1000.}
+
+\item{...}{Further arguments to be passed to \code{continuous_congruency}.}
 }
 \value{
 A p-value between 0 and 1.
