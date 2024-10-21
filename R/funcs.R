@@ -29,18 +29,29 @@ window_compare_rank <- function(one, two, binsize = 1) {
   if (length(one) != length(two)) {
     stop(paste0("The two lists differ in length: ", length(one), " vs ", length(two)))
   }
+    
+  if (binsize <= 0) {
+      stop("Binsize cannot be zero or negative")
+  }
 
-  windows <- if (binsize > length(one)) {
-    seq_along(one)
-  } else {
-    window_start <- 1
-    window_stop <- binsize
+  windows <- {
+    window_start <- 1 - binsize
+    window_stop <- window_start + binsize -1
     i <- 1
     ret <- list()
-    while (window_stop <= length(one)) {
-      ret[[i]] <- seq(from = window_start, to=window_stop, by = 1)
+    while (window_stop <= (length(one) + binsize)) {
+      key <- seq(from = window_start, to=window_stop, by = 1)
+      key[key <= 0] <- NA
+      key[key > length(one)] <- NA
+      
       window_start <- window_start + 1
       window_stop <- window_stop + 1
+      
+      if (all(key %in% c(NA, 0))) {
+          next
+      }
+      
+      ret[[i]] <- key
       i <- i + 1
     }
 
@@ -49,17 +60,16 @@ window_compare_rank <- function(one, two, binsize = 1) {
 
   total_presences <- 0
   for (i in seq_along(windows)) {
-    one_chunk <- one[windows[[i]]]
-    two_chunk <- two[windows[[i]]]
+    one_chunk <- one[windows[[i]]] |> na.omit()
+    two_chunk <- two[windows[[i]]] |> na.omit()
 
     total_presences <- total_presences + sum(as.numeric(purrr::map(one_chunk, \(x) {x %in% two_chunk})))
   }
 
   n <- length(one)
   k <- binsize
-  return(total_presences / (k * (n - k + 1)))
+  return(total_presences / sum(!is.na(unlist(windows))))
 }
-
 
 #' Compute the continuous congruency of two vectors
 #'
